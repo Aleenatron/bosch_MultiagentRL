@@ -1,6 +1,7 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+import matplotlib.pyplot as plt
 
 class MultiAgentDrivingEnv(gym.Env):
     """
@@ -16,6 +17,17 @@ class MultiAgentDrivingEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=1, shape=(num_agents, 4), dtype=np.float32)
 
         self.state = np.zeros((self.num_agents, 4), dtype=np.float32)  # Initialize state
+        self.fig, self.ax = plt.subplots()
+
+    def render(self, mode="human"):
+        self.ax.clear()
+        self.ax.set_xlim(0, 1)  # Track width
+        self.ax.set_ylim(0, 1)  # Track height
+        
+        for agent in self.state:
+            self.ax.scatter(agent[0], agent[1], c='red', s=100)  # Draw cars
+        
+        plt.pause(0.1)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
