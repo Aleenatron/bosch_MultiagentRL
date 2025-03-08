@@ -24,21 +24,24 @@ class MultiAgentDrivingEnv(gym.Env):
 
     def step(self, actions):
         """
-        Moves agents based on actions (simplified update logic).
+        Executes one step in the environment based on agents' actions.
+        Actions: 0 (Left), 1 (Stay), 2 (Right)
         """
-        actions = np.clip(actions, 0, 2)  # Ensure actions are within valid range
-
-        # Example: Modify the first element of each state row based on action
+        # Move the agents
         for i in range(self.num_agents):
-            if actions[i] == 0:  # Move Left
+            if actions[i] == 0:  # Move left
                 self.state[i, 0] = max(0, self.state[i, 0] - 0.05)
-            elif actions[i] == 1:  # Move Right
+            elif actions[i] == 2:  # Move right
                 self.state[i, 0] = min(1, self.state[i, 0] + 0.05)
-            # Stay (action == 2) does nothing
 
-        rewards = np.random.rand(self.num_agents)  # Dummy rewards for now
-        done = False  # Episode termination logic not implemented
-        return self.state, rewards, done, False, {}  # Correct return format
+        # Reward system (encourage staying in center ~ 0.5)
+        rewards = -np.abs(self.state[:, 0] - 0.5)
+
+        # Episode termination condition (Example: If agents move too far left/right)
+        done = np.any(self.state[:, 0] <= 0) or np.any(self.state[:, 0] >= 1)
+
+        return self.state, rewards, done, False, {}
+
 
     def render(self, mode="console"):
         if mode == "console":
