@@ -23,24 +23,39 @@ class MultiAgentDrivingEnv(gym.Env):
         return self.state, {}  # Gymnasium requires returning (obs, info)
 
     def step(self, actions):
-        """
-        Executes one step in the environment based on agents' actions.
-        Actions: 0 (Left), 1 (Stay), 2 (Right)
-        """
-        # Move the agents
+    # Convert actions into a NumPy array and ensure it's the right shape
+        actions = np.array(actions).flatten()
+
+        if actions.shape[0] == 1:
+            actions = np.repeat(actions, self.num_agents)
+
+        if actions.shape[0] != self.num_agents:
+            raise ValueError(f"Expected {self.num_agents} actions but got {actions.shape[0]}: {actions}")
+
+        # Initialize rewards
+        rewards = np.zeros(self.num_agents)
+        done = False
+
+        # Update state based on actions
         for i in range(self.num_agents):
             if actions[i] == 0:  # Move left
-                self.state[i, 0] = max(0, self.state[i, 0] - 0.05)
+                self.state[i][0] -= 0.05
             elif actions[i] == 2:  # Move right
-                self.state[i, 0] = min(1, self.state[i, 0] + 0.05)
+                self.state[i][0] += 0.05
 
-        # Reward system (encourage staying in center ~ 0.5)
-        rewards = -np.abs(self.state[:, 0] - 0.5)
+            # Reward based on distance to center (0.5 is optimal)
+            rewards[i] = 1.0 - abs(self.state[i][0] - 0.5)
 
-        # Episode termination condition (Example: If agents move too far left/right)
-        done = np.any(self.state[:, 0] <= 0) or np.any(self.state[:, 0] >= 1)
+            # Check if agent is out of bounds
+            if self.state[i][0] < 0 or self.state[i][0] > 1:
+                done = True
 
-        return self.state, rewards, done, False, {}
+        # 🛠️ Convert rewards array to a scalar sum
+        total_reward = np.sum(rewards)
+
+        return self.state, total_reward, done, False, {}
+
+
 
 
     def render(self, mode="console"):
